@@ -1,0 +1,119 @@
+# FTRL配置文件 - VLM+DPT + TD3 for TEB
+#
+# 用途: 基于预训练VLM+DPT进行强化学习微调
+# 算法: TD3 (Twin Delayed DDPG)
+# 规划器: TEB (Timed Elastic Band)
+
+env_config:
+  env_id: "teb_param-v0"
+  seed: 14
+  stack_frame: 1  # VLM使用RGB图像，不需要stack
+  use_condor: True
+  shaping_reward: True
+  use_pretrain: null
+
+  kwargs:
+    gui: false
+    rviz_gui: true
+    planner: "TEB"
+
+    # TEB 参数初始值 (7个规划器参数 + 2个速度参数)
+    param_init: [1.5, 0.5, 3.0, 0.5, 0.2, 0.2, 0.25, 1.0, 0.0]
+    param_list:
+      - "max_vel_x"             # 最大线速度 [0.1, 2.0]
+      - "max_vel_x_backwards"   # 最大后退速度 [0.0, 1.0]
+      - "max_vel_theta"         # 最大角速度 [0.314, 3.14]
+      - "dt_ref"                # 轨迹时间分辨率 [0.1, 1.0]
+      - "min_obstacle_dist"     # 最小障碍物距离 [0.05, 0.5]
+      - "inflation_dist"        # 膨胀距离 [0.05, 0.5]
+      - "inflation_radius"      # 膨胀半径 [0.1, 0.6]
+      - "next_linear_vel"       # 下一步线速度 [-0.5, 2.0]
+      - "next_angular_vel"      # 下一步角速度 [-3.14, 3.14]
+
+training_config:
+  algorithm: "TD3"
+
+  # ===== VLM+DPT配置 =====
+  vlm_checkpoint_path: "/data/local/yl2832/appvlm_ws/src/ros_jackal/model/teb/qwen2.5-vl-regression_lora-True_teb_regression_3b/checkpoint-5000"
+  # ===== 冻结策略 =====
+  freeze_vlm_actor: false
+  freeze_dpt_actor: false
+  freeze_history_actor: false
+
+  freeze_dpt_critic: true
+
+  # ===== 学习率 =====
+  actor_lr: 2.0e-5
+  critic_lr: 2.0e-5
+
+  # ===== Buffer配置 =====
+  buffer_size: 200000
+
+  # ===== TD3超参数 =====
+  policy_args:
+    gamma: 0.99
+    tau: 0.005
+    policy_noise: 0.2
+    noise_clip: 0.5
+    n_step: 6
+    update_actor_freq: 2
+    exploration_noise: 0.1
+
+  # ===== 探索噪声 =====
+  exploration_noise_start: 0.05
+  exploration_noise_end: 0.01
+
+  # ===== 预收集和日志 =====
+  pre_collect: 512
+  log_intervals: 10
+  use_actor: 1
+
+  # ===== 训练参数 =====
+  training_args:
+    max_step: 100000
+    collect_per_step: 512
+    update_per_step: 100
+    batch_size: 4
+
+# ===== FTRL 数据收集配置 =====
+ftrl_config:
+  # ===== 服务启动配置 =====
+  auto_start_services: true
+  auto_stop_services: true
+  start_containers: true
+  start_port: 7000
+  gpu_strategy: "3,3,4,4,5,5,6,6"
+  base_model: "Qwen/Qwen2.5-VL-3B-Instruct"
+
+  # 服务器列表
+  server_urls:
+    - "http://localhost:7000"
+    - "http://localhost:7001"
+    - "http://localhost:7002"
+    - "http://localhost:7003"
+    - "http://localhost:7004"
+    - "http://localhost:7005"
+    - "http://localhost:7006"
+    - "http://localhost:7007"
+
+  # 训练数据收集
+  train_assignments:
+    - "243,219,280,173,193,276,293,215,143,240,59,21,190,49,204"
+    - "168,171,281,217,120,150,33,30,220,64,91,260,106,85"
+    - "220,192,197,236,137,132,214,289,141,180,12,70,76,206,250"
+    - "222,111,163,201,228,265,98,19,245,282,126,165,231,241"
+    - "24,74,48,114,283,259,273,142,242,195,196,102,188,205"
+    - "191,272,117,105,99,238,261,298,175,292,158,138,174,208"
+    - "267,266,287,294,66,207,237,232,62,285,249,299,247,182"
+    - "284,295,271,275,167,129,118,244,100,288,136,264,181,290"
+
+  # 测试评估 (交错分配实现负载均衡)
+  test_assignments:
+    - "0,48,96,144,192,240,288"
+    - "6,54,102,150,198,246,294"
+    - "12,60,108,156,204,252"
+    - "18,66,114,162,210,258"
+    - "24,72,120,168,216,264"
+    - "30,78,126,174,222,270"
+    - "36,84,132,180,228,276"
+    - "42,90,138,186,234,282"

@@ -1,0 +1,3 @@
+Method,Collision,Recovery,Smoothness,Status,Time,World,optimal_time,nav_metric
+HB,0,0.4347423167456004,-377.5915938785805,timeout,107.88,world_132.world,7.974880854282869,0.0
+HB,0,0.5190952999796942,-365.2342562144636,timeout,107.88000000000002,world_132.world,7.974880854282869,0.0

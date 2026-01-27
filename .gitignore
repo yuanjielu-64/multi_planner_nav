@@ -1,0 +1,21 @@
+# Exclude large Singularity image file
+ros_jackal/jackal.sif
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Build files
+build/
+devel/
+*.o
+*.a
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~

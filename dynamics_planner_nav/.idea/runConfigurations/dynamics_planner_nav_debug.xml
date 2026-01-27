@@ -1,0 +1,16 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="dynamics_planner_nav_debug" type="CppApplicationRunConfiguration" factoryName="C/C++ Application">
+    <option name="PROGRAM_PARAMS" value="" />
+    <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$/../.." />
+    <option name="TARGET_PATH" value="$PROJECT_DIR$/../../devel/lib/dynamics_planner_nav/dynamics_planner_nav_node" />
+    <option name="REDIRECT_INPUT" value="false" />
+    <option name="ELEVATE" value="false" />
+    <option name="PASS_PARENT_ENVS" value="true" />
+    <option name="PROJECT_NAME" value="dynamics_planner_nav" />
+    <option name="TARGET_NAME" value="dynamics_planner_nav_node" />
+    <option name="CONFIGURATION_NAME" value="Debug" />
+    <method v="2">
+      <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+    </method>
+  </configuration>
+</component>

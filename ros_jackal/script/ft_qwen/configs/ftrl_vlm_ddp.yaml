@@ -1,0 +1,129 @@
+# FTRL配置文件 - VLM+DPT + TD3 for DDP
+#
+# 用途: 基于预训练VLM+DPT进行强化学习微调
+# 算法: TD3 (Twin Delayed DDPG)
+# 规划器: DDP (Differential Dynamic Programming)
+
+env_config:
+  env_id: "ddp_param-v0"
+  seed: 14
+  stack_frame: 1  # VLM使用RGB图像，不需要stack
+  use_condor: True
+  shaping_reward: True
+  use_pretrain: null  # 如果要继续训练已有checkpoint，设置为路径
+
+  kwargs:
+    gui: false
+    rviz_gui: true
+    planner: "DDP"
+
+    # DDP 参数初始值 (6个规划器参数 + 2个速度参数)
+    param_init: [1.5, 3.0, 600, 0.1, 0.02, 0.25, 1.0, 0.0]
+    param_list:
+      - "max_vel_x"        # 最大线速度 [0.1, 2.0]
+      - "max_vel_theta"    # 最大角速度 [0.314, 3.14]
+      - "nr_pairs_"        # DDP采样对数 [400, 800]
+      - "distance"         # 距离权重 [0.01, 0.4]
+      - "robot_radius"     # 机器人半径 [0.01, 0.15]
+      - "inflation_radius" # 膨胀半径 [0.1, 0.6]
+      - "next_linear_vel"  # 下一步线速度 [-0.5, 2.0]
+      - "next_angular_vel" # 下一步角速度 [-3.14, 3.14]
+
+training_config:
+  algorithm: "TD3"
+
+  # ===== VLM+DPT配置 =====
+  # 重要: 修改为你的checkpoint路径
+  #vlm_checkpoint_path: "/home/yuanjielu22/Desktop/IROS2026/src/ros_jackal/model/ddp/checkpoint-2500"
+  vlm_checkpoint_path: "/data/local/yl2832/appvlm_ws/src/ros_jackal/model/ddp/qwen2.5-vl-regression_lora-True_ddp_regression_3b/checkpoint-2500"
+  # ===== 冻结策略 (独立控制VLM、DPT、History Encoder) =====
+  # Actor部分 - 全部冻结，只训练TD3的Critic和噪声网络
+  freeze_vlm_actor: false          # VLM冻结
+  freeze_dpt_actor: false          # DPT冻结
+  freeze_history_actor: false      # History Encoder冻结
+
+  # Critic部分 (共享Actor的feature extractor，所以这些参数实际不生效)
+  freeze_dpt_critic: true         # 保留用于兼容性
+
+  # ===== 学习率 (参考监督学习 LR=2e-5) =====
+  actor_lr: 2.0e-5   # 与监督学习一致
+  critic_lr: 2.0e-5  # 与监督学习一致 (之前3e-4太高导致NaN)
+
+  # ===== Buffer配置 =====
+  buffer_size: 200000
+
+  # ===== TD3超参数 =====
+  policy_args:
+    gamma: 0.99           # 折扣因子
+    tau: 0.005            # 软更新系数
+    policy_noise: 0.2     # 目标策略平滑噪声
+    noise_clip: 0.5       # 噪声裁剪
+    n_step: 8             # N-step return
+    update_actor_freq: 2  # Actor延迟更新频率
+    exploration_noise: 0.1
+
+  # ===== 探索噪声 (VLM预训练好了，可以减少探索) =====
+  exploration_noise_start: 0.1  # 起始噪声 (APPLR: 0.1)
+  exploration_noise_end: 0.01    # 结束噪声
+
+  # ===== 预收集和日志 =====
+  pre_collect: 512      # 预收集经验数
+  log_intervals: 10       # 日志间隔
+  use_actor: 1            # 使用的actor数量
+
+  # ===== 训练参数 =====
+  training_args:
+    max_step: 100000         # 总训练步数
+    collect_per_step: 512    # 每次收集步数
+    update_per_step: 100       # 每次收集后更新次数
+    batch_size: 4            # 批大小 (VLM需要较多显存，16会OOM)
+
+# ===== FTRL 数据收集配置 =====
+ftrl_config:
+  # ===== 服务启动配置 =====
+  # 注意：这些参数可以被命令行参数覆盖（--start_services, --start_containers）
+  auto_start_services: true    # 是否自动启动 tmux VLM 服务（默认: true）
+  auto_stop_services: true     # Ctrl+C 时是否自动关闭 tmux 服务（默认: true）
+  start_containers: true      # 是否启动数据收集容器（Docker/Condor）（默认: false）
+  start_port: 7000             # 起始端口号
+  gpu_strategy: "1,1,1,1,2,2,2,2"            # GPU分配策略: "0"=共享GPU0, "auto"=自动递增, "0,1,0,1"=手动指定
+  base_model: "Qwen/Qwen2.5-VL-3B-Instruct"  # 基础VLM模型
+
+  # ===== World 路径配置 =====
+  # train 和 test 使用不同的 world 目录
+  train_world_path: "jackal_helper/worlds/BARN/"   # 训练环境目录
+  test_world_path: "jackal_helper/worlds/BARN1/"   # 测试环境目录
+
+  # 服务器列表 (服务数量 = len(server_urls))
+  server_urls:
+    - "http://localhost:7000"
+    - "http://localhost:7001"
+    - "http://localhost:7002"
+    - "http://localhost:7003"
+    - "http://localhost:7004"
+    - "http://localhost:7005"
+    - "http://localhost:7006"
+    - "http://localhost:7007"
+
+  # 训练数据收集 (用于生成 pickle)
+  train_assignments:
+    - "243,219,280,173,193,276,293,215,143,240,59,21,190,49,204"      # Group 0 -> Server 0
+    - "168,171,281,217,120,150,33,30,220,64,91,260,106,85"      # Group 1 -> Server 1
+    - "220,192,197,236,137,132,214,289,141,180,12,70,76,206,250"      # Group 2 -> Server 2
+    - "222,111,163,201,228,265,98,19,245,282,126,165,231,241"      # Group 3 -> Server 3
+    - "24,74,48,114,283,259,273,142,242,195,196,102,188,205"      # Group 4 -> Server 4
+    - "191,272,117,105,99,238,261,298,175,292,158,138,174,208"      # Group 5 -> Server 5
+    - "267,266,287,294,66,207,237,232,62,285,249,299,247,182"      # Group 6 -> Server 6
+    - "284,295,271,275,167,129,118,244,100,288,136,264,181,290"      # Group 7 -> Server 7
+
+  # 测试评估 (evaluation，每隔 6 个: 0, 6, 12, ..., 294，交错分配实现负载均衡)
+  # 交错分配：每个组包含不同难度的world，避免某个server只处理困难world
+  test_assignments:
+    - "0,48,96,144,192,240,288"      # Group 0: 索引 0,8,16,24,32,40,48 (简单→困难)
+    - "6,54,102,150,198,246,294"     # Group 1: 索引 1,9,17,25,33,41,49 (简单→困难)
+    - "12,60,108,156,204,252"        # Group 2: 索引 2,10,18,26,34,42
+    - "18,66,114,162,210,258"        # Group 3: 索引 3,11,19,27,35,43
+    - "24,72,120,168,216,264"        # Group 4: 索引 4,12,20,28,36,44
+    - "30,78,126,174,222,270"        # Group 5: 索引 5,13,21,29,37,45
+    - "36,84,132,180,228,276"        # Group 6: 索引 6,14,22,30,38,46
+    - "42,90,138,186,234,282"        # Group 7: 索引 7,15,23,31,39,47
