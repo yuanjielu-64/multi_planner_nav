@@ -11,16 +11,11 @@ register(
 )
 
 register(
-    id="eband_param-v0",
-    entry_point="envs.Eband.parameter_tuning_envs:EbandParamContinuousLaser"
-)
-
-register(
     id="mppi_param-v0",
-    entry_point="envs.MPPI.mppi_envs:MPPIPlanning"
+    entry_point="envs.MPPI.parameter_tuning_envs:MPPIParamContinuousLaser"
 )
 
 register(
     id="ddp_param-v0",
-    entry_point="envs.DDP.ddp_envs:DDPPlanning"
+    entry_point="envs.DDP.parameter_tuning_envs:DDPParamContinuousLaser"
 )

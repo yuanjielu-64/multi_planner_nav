@@ -7,10 +7,9 @@ from os.path import dirname, abspath
 sys.path.append(dirname(dirname(abspath(__file__))))
 
 from envs.DWA.parameter_tuning_envs import RANGE_DICT as dwa_equation
-from envs.Eband.parameter_tuning_envs import RANGE_DICT as eband_equation
 from envs.Teb.parameter_tuning_envs import RANGE_DICT as teb_equation
-from envs.MPPI.jackal_parameter import RANGE_DICT as mppi_equation
-from envs.DDP.jackal_parameter import RANGE_DICT as ddp_equation
+from envs.MPPI.parameter_tuning_envs import RANGE_DICT as mppi_equation
+from envs.DDP.parameter_tuning_envs import RANGE_DICT as ddp_equation
 
 class InfoEnv:
     """ The infomation environment contains observation space and action space infomation only

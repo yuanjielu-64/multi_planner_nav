@@ -11,7 +11,7 @@ import subprocess
 from gym.spaces import Box, Discrete
 import copy
 
-from envs.utils import GazeboSimulation, Teb_move_base, JackalRos
+from envs.utils import GazeboSimulation, teb_MoveBase, JackalRos
 
 GAZEBO_PORT_BASE = 14000
 
@@ -99,29 +99,29 @@ class TebBase(gym.Env):
         # launch gazebo
         rospy.logwarn(">>>>>>>>>>>>>>>>>> Load world: %s <<<<<<<<<<<<<<<<<<" % (world_name))
 
-        # ros_package_path = os.environ.get('ROS_PACKAGE_PATH', 'Not set')
-        # print(f"ROS_PACKAGE_PATH: {ros_package_path}")
-
         rospack = rospkg.RosPack()
         self.BASE_PATH = rospack.get_path('jackal_helper')
         self.WORLD_PATH = join(self.BASE_PATH, self.WORLD_PATH)
         world_name = join(self.WORLD_PATH, world_name)
 
-        if self.rviz_gui == False:
-            launch_file = join(self.BASE_PATH, 'launch', 'gazebo_applr_teb.launch')
-        else:
-            launch_file = join(self.BASE_PATH, 'launch', 'gazebo_applr_teb_rviz.launch')
+        launch_file = join(self.BASE_PATH, 'launch', 'gazebo_launch.launch')
 
-        self.gazebo_process = subprocess.Popen(['roslaunch',
-                                                launch_file,
-                                                'world_name:=' + world_name,
-                                                'gui:=' + ("true" if gui else "false"),
-                                                'verbose:=' + ("true" if verbose else "false"),
-                                                ])
+        # normalize planner string to match launch expectations
+        planner = 'TEB'
 
-        time.sleep(10)  # sleep to wait until the gazebo being created
+        self.gazebo_process = subprocess.Popen([
+            'roslaunch',
+            launch_file,
+            'world_name:=' + world_name,
+            'planner_mode:=RunMP',
+            'planner:=' + planner,
+            'gui:=' + ("true" if gui else "false"),
+            'use_rviz:=' + ("true" if self.rviz_gui else "false"),
+        ])
 
-        rospy.logwarn(">>>>>>>>>>>>>>>>>> !!Load world2: %s <<<<<<<<<<<<<<<<<<" % (world_name))
+        time.sleep(5)  # sleep to wait until the gazebo being created
+
+        rospy.logwarn(">>>>>>>>>>>>>>>>>> Gazebo launched with planner: %s <<<<<<<<<<<<<<<<<<" % planner)
 
         # Initialize ROS node only if not already initialized
         if not rospy.core.is_initialized():
@@ -131,18 +131,20 @@ class TebBase(gym.Env):
             rospy.logwarn(">>>>>>>>>>>>>>>>>> ROS node already initialized, skipping <<<<<<<<<<<<<<<<<<")
 
         rospy.set_param('/use_sim_time', True)
-        rospy.logwarn(">>>>>>>>>>>>>>>>>> !!Load world3: %s <<<<<<<<<<<<<<<<<<" % (world_name))
+        rospy.logwarn(">>>>>>>>>>>>>>>>>> World loaded: %s <<<<<<<<<<<<<<<<<<" % (world_name))
 
     def launch_move_base(self, goal_position, base_local_planner):
         rospack = rospkg.RosPack()
         self.BASE_PATH = rospack.get_path('jackal_helper')
-        launch_file = join(self.BASE_PATH, 'launch', 'move_base_applr_teb.launch')
+        launch_file = join(self.BASE_PATH, 'launch', 'move_base.launch')
         self.move_base_process = subprocess.Popen(
-            ['roslaunch', launch_file, 'base_local_planner:=' + base_local_planner])
+            ['roslaunch', launch_file,
+             'remap_cmd_vel:=true',
+             'base_local_planner:=' + base_local_planner])
 
         time.sleep(5)  # Additional buffer time for costmap initialization
 
-        self.move_base = Teb_move_base(goal_position=goal_position, base_local_planner=base_local_planner)
+        self.move_base = teb_MoveBase(goal_position=goal_position, base_local_planner=base_local_planner)
 
     def kill_move_base(self):
         os.system("pkill -9 move_base")

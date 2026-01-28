@@ -139,9 +139,7 @@ def transform_gp(gp, X, Y, PSI):
     pr = np.matmul(R_i2r, pi.T)
     return np.asarray(pr[:2, :])
 
-
-class DWA_move_base():
-
+class dwa_MoveBase():
     def __init__(self, goal_position=[6, 6, 0], base_local_planner="base_local_planner/TrajectoryPlannerROS"):
         self.goal_position = goal_position
         self.base_local_planner = base_local_planner.split("/")[-1]

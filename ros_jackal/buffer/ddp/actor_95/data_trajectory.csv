@@ -1,4 +1,0 @@
-Method,Start_frame_id,Done_frame_id,Collision,Recovery,Smoothness,Status,Time,World,optimal_time,nav_metric
-RL,0,10,0,3.174602166792963e-07,-0.4205730774151565,success,6.305,world_95.world,9.649307432794064,0.5
-RL,0,10,0,3.1446530991656923e-07,-0.3808707106058494,success,6.364,world_95.world,9.649307432794064,0.5
-RL,0,10,0,3.174602166792963e-07,-0.40640769727649373,success,6.304,world_95.world,9.649307432794064,0.5

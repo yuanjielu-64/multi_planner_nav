@@ -54,7 +54,7 @@ From: ros:noetic
 
     # Clone repository
     cd /jackal_ws/src
-    git clone https://github.com/yuanjielu-64/appvlm .
+    git clone https://github.com/yuanjielu-64/multi_planner_nav .
 
     # Install Python dependencies
     cd /jackal_ws/src/ros_jackal
