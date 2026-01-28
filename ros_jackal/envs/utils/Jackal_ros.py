@@ -1307,6 +1307,8 @@ class JackalRos:
             alg = "VLM"
         elif self.algorithm_name in ['FTRL']:
             alg = "FTRL"
+        elif self.algorithm_name in ['STATIC']:
+            alg = "ST"
         else:
             alg = "Unknown"
 

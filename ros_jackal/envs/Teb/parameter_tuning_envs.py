@@ -42,27 +42,35 @@ class TebParamContinuous(TebBase):
         )
 
     def _take_action(self, action):
-        assert len(action) == len(self.param_list), "length of the params should match the length of the action"
 
-        clipped_action = []
-        for param_value, param_name in zip(action, self.param_list):
-            low, high = RANGE_DICT[param_name]
-            clipped_value = np.clip(param_value, low, high)
-            clipped_action.append(clipped_value)
+        if action is None:
+            self.gazebo_sim.unpause()
+            rospy.sleep(self.time_step)
+            self.gazebo_sim.pause()
 
-        self.params = clipped_action
-        self.gazebo_sim.unpause()
+        else:
 
-        # Set parameters
-        self.jackal_ros.set_params(clipped_action)
+            assert len(action) == len(self.param_list), "length of the params should match the length of the action"
 
-        # Special handling for inflation_radius
-        for param_value, param_name in zip(clipped_action, self.param_list):
-            self.move_base.set_navi_param(param_name, float(param_value))
+            clipped_action = []
+            for param_value, param_name in zip(action, self.param_list):
+                low, high = RANGE_DICT[param_name]
+                clipped_value = np.clip(param_value, low, high)
+                clipped_action.append(clipped_value)
 
-        rospy.sleep(self.time_step)
-        self.gazebo_sim.pause()
-        self.jackal_ros.last_action = clipped_action
+            self.params = clipped_action
+            self.gazebo_sim.unpause()
+
+            # Set parameters
+            self.jackal_ros.set_params(clipped_action)
+
+            # Special handling for inflation_radius
+            for param_value, param_name in zip(clipped_action, self.param_list):
+                self.move_base.set_navi_param(param_name, float(param_value))
+
+            rospy.sleep(self.time_step)
+            self.gazebo_sim.pause()
+            self.jackal_ros.last_action = clipped_action
 
 class TebParamContinuousLaser(TebParamContinuous, TebBaseLaser):
     def __init__(self, **kwargs):

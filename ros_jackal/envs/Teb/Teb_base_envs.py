@@ -160,7 +160,7 @@ class TebBase(gym.Env):
         self.jackal_ros.reset(self.param_init)
         self.gazebo_sim.unpause()
         self._reset_move_base()
-        self.jackal_ros.set_params(self.param_init)
+        #self.jackal_ros.set_params(self.param_init)
         obs = self._get_observation()
         self.gazebo_sim.pause()
 
@@ -256,6 +256,8 @@ class TebBase(gym.Env):
         """根据算法类型处理动作"""
         if self.algorithm_name == 'Heurstic_based':
             return self._get_heuristic_action(action)
+        elif self.algorithm_name == "STATIC":
+            return None
         else:
             return action
 

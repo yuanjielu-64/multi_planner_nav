@@ -172,20 +172,20 @@ if __name__ == '__main__':
     print("Starting APPLR evaluation script")
     print("=" * 60)
 
-    parser = argparse.ArgumentParser(description = 'APPLR evaluation on a single world')
+    parser = argparse.ArgumentParser(description = 'evaluation on a single world')
     parser.add_argument('--world_id', dest='world_id', type = int, default = 0,
                         help='World ID to evaluate (0-299 for BARN dataset)')
-    parser.add_argument('--policy_name', dest='policy_name', default="ddp",
-                        help='Policy name (e.g., dwa_heurstic, ddp_heurstic, teb_heurstic, mppi_heurstic)')
+    parser.add_argument('--policy_name', dest='policy_name', default="teb",
+                        help='Policy name (e.g., dwa, ddp, teb, mppi)')
     parser.add_argument('--buffer_path', dest='buffer_path', default="../../buffer/")
     parser.add_argument('--world_path', dest='world_path', default="../../jackal_helper/worlds/BARN1/")
     parser.add_argument('--mode', type=str, default='auto', choices=['auto', 'manual'],
-                        help='Data generation mode: auto (RL/HB) or manual (fixed parameters)')
+                        help='Data generation mode: auto or manual (fixed parameters)')
     parser.add_argument('--ros_port', type=int, default=11311, help='ROS master port for this instance')
-    parser.add_argument('--save_image', type=lambda x: x.lower() == 'true', default=True,
+    parser.add_argument('--save_image', type=lambda x: x.lower() == 'true', default=False,
                         help='Whether to save costmap images (default: True)')
-    parser.add_argument('--algorithm_name', type=str, default='APPLR',
-                        help='Algorithm name for identification (default: APPLR)')
+    parser.add_argument('--algorithm_name', type=str, default='STATIC',
+                        help='Algorithm name for identification (default: APPLR, HB, STATIC)')
     parser.add_argument('--num_trials', type=int, default=1,
                         help='Number of trials to run for each world (default: 100)')
 

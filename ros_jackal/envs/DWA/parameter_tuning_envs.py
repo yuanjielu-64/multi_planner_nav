@@ -41,31 +41,38 @@ class DWAParamContinuous(DWABase):
         )
 
     def _take_action(self, action):
-        assert len(action) == len(self.param_list), "length of the params should match the length of the action"
+        if action is None:
+            self.gazebo_sim.unpause()
+            rospy.sleep(self.time_step)
+            self.gazebo_sim.pause()
 
-        clipped_action = []
-        for param_value, param_name in zip(action, self.param_list):
-            low, high = RANGE_DICT[param_name]
-            if (param_name == "TrajectoryPlannerROS/vx_samples"):
-                param_value = int(param_value)
-            if (param_name == "TrajectoryPlannerROS/vtheta_samples"):
-                param_value = int(param_value)
-            clipped_value = np.clip(param_value, low, high)
-            clipped_action.append(clipped_value)
+        else:
 
-        self.params = clipped_action
-        self.gazebo_sim.unpause()
+            assert len(action) == len(self.param_list), "length of the params should match the length of the action"
 
-        # Set parameters
-        self.jackal_ros.set_params(clipped_action)
+            clipped_action = []
+            for param_value, param_name in zip(action, self.param_list):
+                low, high = RANGE_DICT[param_name]
+                if (param_name == "TrajectoryPlannerROS/vx_samples"):
+                    param_value = int(param_value)
+                if (param_name == "TrajectoryPlannerROS/vtheta_samples"):
+                    param_value = int(param_value)
+                clipped_value = np.clip(param_value, low, high)
+                clipped_action.append(clipped_value)
 
-        # Special handling for inflation_radius
-        for param_value, param_name in zip(clipped_action, self.param_list):
-            self.move_base.set_navi_param(param_name, float(param_value))
+            self.params = clipped_action
+            self.gazebo_sim.unpause()
 
-        rospy.sleep(self.time_step)
-        self.gazebo_sim.pause()
-        self.jackal_ros.last_action = clipped_action
+            # Set parameters
+            self.jackal_ros.set_params(clipped_action)
+
+            # Special handling for inflation_radius
+            for param_value, param_name in zip(clipped_action, self.param_list):
+                self.move_base.set_navi_param(param_name, float(param_value))
+
+            rospy.sleep(self.time_step)
+            self.gazebo_sim.pause()
+            self.jackal_ros.last_action = clipped_action
 
 
 class DWAParamContinuousLaser(DWAParamContinuous, DWABaseLaser):
